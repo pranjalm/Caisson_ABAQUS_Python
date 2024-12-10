@@ -23,14 +23,11 @@ import displayGroupOdbToolset as dgo
 import connectorBehavior
 import math
 import os
-
-#if model_name in mdb.models.keys():
-#    del mdb.models[model_name]
-
-# m1, m2 and m3 are about cassion depth
-# s1 and s2 are about cassion diameter
-# A, B, C and D are about cassion depth
-model_names = ['m1_s1_C','m2_s1_C','m2_s1_A','m2_s1_B','m2_s1_D','m2_s2_C','m2_s2_A','m2_s2_B','m2_s2_D','m3_s1_C'] # name all the models here # 'm2_s0_Z'
+# all values are in meter, kg and seconds
+# m1, m2 and m3 are about first cassion depth
+# s1 and s2 are about second cassion or skirt diameter
+# A, B, C and D are about second cassion or skirt depth
+# model_names = ['m1_s1_C','m2_s1_C','m2_s1_A','m2_s1_B','m2_s1_D','m2_s2_C','m2_s2_A','m2_s2_B','m2_s2_D','m3_s1_C'] # name all the models here # 'm2_s0_Z'
 model_names = ['m2_s1_C','m2_s1_A','m2_s1_B','m2_s1_D']
 for model_name in model_names:
     if model_name in mdb.models.keys():
@@ -78,10 +75,11 @@ for model_name in model_names:
     g, v, d, c = s.geometry, s.vertices, s.dimensions, s.constraints
     s.rectangle(point1=(diameter_cassion+thickness, 0.0), point2=(diameter_cassion, l_1))   
     s.ConstructionLine(point1=(0.0, -0.5), point2=(0.0, 0.5))
-    s.FixedConstraint(entity=g[2]) #we need to google to understand better
+    s.FixedConstraint(entity=g[2]) 
     
     # Check if the skirt is there or not
     if(l_2 == 0):
+        # this line does not mean anything.
         lid_radius = diameter_cassion+d_2+thickness
         #print('not to be modeled')
     else:
@@ -145,8 +143,9 @@ for model_name in model_names:
     always_prt = ['int_cassion_lid_rvl', 'rod_rvl'] 
     temp_anl_parts = list(set(all_prt) - set(always_prt))
     fine_parts = list(set(all_prt) - set(['sand_xtr', 'gravel_xtr']))
-    print(temp_anl_parts)
+    # print(temp_anl_parts)
     # partitioning the annular parts
+    print('tst1')
     for i in temp_anl_parts:
         if('_rvl' in i):
             #   Partition 1
@@ -159,7 +158,7 @@ for model_name in model_names:
             pickedCells = c.getSequenceFromMask(mask=('[#3 ]', ), )
             e, v, d = p.edges, p.vertices, p.datums
             p.PartitionCellByPlaneNormalToEdge(edge=e[13], cells=pickedCells, point=p.InterestingPoint(edge=e[13], rule=MIDDLE))
-
+    print('tst2')
     # partitioning the solid parts
     for i in always_prt:
         #   Partition 1
@@ -173,6 +172,7 @@ for model_name in model_names:
         e, v, d = p.edges, p.vertices, p.datums
         p.PartitionCellByPlaneNormalToEdge(edge=e[4], cells=pickedCells,  point=p.InterestingPoint(edge=e[4], rule=MIDDLE))
 
+    print('tst3')
     # lid partition
     p = mdb.models[model_name].parts['int_cassion_lid_rvl']
     f, e, d = p.faces, p.edges, p.datums
@@ -238,7 +238,7 @@ for model_name in model_names:
     verts = v.getSequenceFromMask(mask=('[#10 ]', ), )
     p.Set(vertices=verts, name='e4')
 
-
+    print('tst4')
     # partition the sand at levels for cassion and skirt
     all_prt = mdb.models[model_name].parts.keys()
     skirt_sum = [int('skirt' in i) for i in all_prt]
@@ -285,7 +285,7 @@ for model_name in model_names:
         pickedCells = c.getSequenceFromMask(mask=('[#f ]', ), )
         e1, v1, d = p.edges, p.vertices, p.datums
         p.PartitionCellByPlanePointNormal(normal=e1[28], cells=pickedCells, point=p.InterestingPoint(edge=e1[28], rule=MIDDLE))
-
+    print('tst5')
 #############################################################################################################################################
 #############################################################################################################################################
 #############################################################################################################################################
@@ -312,7 +312,7 @@ for model_name in model_names:
     a.InstanceFromBooleanCut(name='sand_all', instanceToBeCut=a.instances['sand_xtr-1'], cuttingInstances=(a.instances['cassion_all-1'], ), originalInstances=SUPPRESS)
     a.features['cassion_all-1'].resume()
     del a.features['sand_xtr-1']
-
+    print('tst6')
 #############################################################################################################################################
 #############################################################################################################################################
 #############################################################################################################################################
@@ -341,7 +341,7 @@ for model_name in model_names:
     # Section assignment to the parts
     all_prt = mdb.models[model_name].parts.keys()
     skirt_sum = [int('skirt' in i) for i in all_prt]
-  
+    print('tst7')
     if(sum(skirt_sum)!= 0): #if there is skirt
         p = mdb.models[model_name].parts['sand_all']
         c = p.cells
@@ -354,11 +354,11 @@ for model_name in model_names:
         cells = c.getSequenceFromMask(mask=('[#ffffffff #f ]', ), )
         region = p.Set(cells=cells, name='main')
         p.SectionAssignment(region=region, sectionName='steel_section', offset=0.0, offsetType=MIDDLE_SURFACE, offsetField='', thicknessAssignment=FROM_SECTION)
-
+        print('tst8')
     else: #if there is no skirt
         p = mdb.models[model_name].parts['sand_all']
         c = p.cells
-        cells = c.getSequenceFromMask(mask=('[#ffff ]', ), )
+        cells = c.getSequenceFromMask(mask=('[#fff ]', ), )
         region = p.Set(cells=cells, name='main')
         p.SectionAssignment(region=region, sectionName='sand_section', offset=0.0, offsetType=MIDDLE_SURFACE, offsetField='', thicknessAssignment=FROM_SECTION)
 
@@ -367,13 +367,13 @@ for model_name in model_names:
         cells = c.getSequenceFromMask(mask=('[#ffffffff ]', ), )
         region = p.Set(cells=cells, name='main')
         p.SectionAssignment(region=region, sectionName='steel_section', offset=0.0, offsetType=MIDDLE_SURFACE, offsetField='', thicknessAssignment=FROM_SECTION)
-
+    print('tst9')
     p = mdb.models[model_name].parts['gravel_xtr']
     c = p.cells
-    cells = c.getSequenceFromMask(mask=('[#f ]', ), )
+    cells = c.getSequenceFromMask(mask=('[#1 ]', ), )
     region = p.Set(cells=cells, name='main')
     p.SectionAssignment(region=region, sectionName='gravel_section', offset=0.0, offsetType=MIDDLE_SURFACE, offsetField='', thicknessAssignment=FROM_SECTION)
-
+    print('tst10')
 #############################################################################################################################################
 #############################################################################################################################################
 #############################################################################################################################################
@@ -390,10 +390,10 @@ for model_name in model_names:
         
         p = mdb.models[model_name].parts[i]
         if(('sand' in i) or ('gravel' in i)):
-            p.setElementType(regions=(p.cells.getSequenceFromMask(mask=('[#f ]', ), ), ), elemTypes=(elemType1, elemType2, elemType3))
+            p.setElementType(regions=(p.cells.getSequenceFromMask(mask=('[#1 ]', ), ), ), elemTypes=(elemType1, elemType2, elemType3))
         p.seedPart(size=j, deviationFactor=0.1, minSizeFactor=0.1)
         p.generateMesh()
-
+    print('tst11')
     # regenerating mesh for assemably
     a = mdb.models[model_name].rootAssembly
     a.regenerate()
@@ -422,7 +422,7 @@ for model_name in model_names:
 
     all_prt = mdb.models[model_name].parts.keys()
     skirt_sum = [int('skirt' in i) for i in all_prt]
-  
+    print('tst12')
     if(sum(skirt_sum)!= 0): #if there is skirt
         p = mdb.models[model_name].parts['sand_all']
         faces = p.faces.getSequenceFromMask(mask=('[#0:2 #7094e000 #7fbce]', ), )  
@@ -432,11 +432,12 @@ for model_name in model_names:
         faces = p.faces.getSequenceFromMask(mask=('[#80000000 #7f9d049]', ), )  
         p.Set(faces=faces, name='roller')
 
-          
+    print('tst13')      
     p = mdb.models[model_name].parts['gravel_xtr']
     faces = p.faces.getSequenceFromMask(mask=('[#f ]', ), )
     p.Set(faces=faces, name='roller')
-          
+
+    print('tst14')    
 
     # creating roller set for roller boundry 
     # creating ROLLER set from boolean
@@ -550,4 +551,4 @@ for model_name in model_names:
         numGPUs=0, numDomains=4)
 
     #INPUT File Generation
-    mdb.jobs[model_name+'_job'].writeInput(consistencyChecking=OFF)  
+    mdb.jobs[model_name+'_job'].writeInput(consistencyChecking=OFF)
